@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<content id="MTrCheats" name="MTr Cheats" description="X4 Foundations Cheats" author="MTr" version="103" save="0" date="2026-10-16">
+	<text language="7" name="Читы MTr" description="Читы для X4 Foundations" author="MTr"/>
+	<dependency id="ego_dlc_split" optional="true" name="Split Vendetta"/>
+	<dependency id="ego_dlc_terran" optional="true" name="Cradle of Humanity"/>
+	<dependency id="ego_dlc_pirate" optional="true" name="Tides of Avarice"/>
+	<dependency id="ego_dlc_boron" optional="true" name="Kingdom End"/>
+	<dependency id="ego_dlc_timelines" optional="true" name="Timelines"/>
+</content>

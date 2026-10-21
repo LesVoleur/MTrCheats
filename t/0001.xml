@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<language>
+	<page id="25102029" voice="no">
+		<!-- cheats -->
+		<t id="1">Invulnerability</t>
+		<t id="2">Cheats</t>
+		<t id="3">No ammunition consumption</t>
+		<t id="4">No civilian deployable consumption</t>
+		<t id="5">No military deployable consumption</t>
+	</page>
+</language>

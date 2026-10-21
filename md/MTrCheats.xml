@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="Invincible" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <cues>
+    <cue name="SetInvulnerability" instantiate="true" namespace="this">
+      <conditions>
+        <event_ui_triggered screen="'MTrCheats'"/>
+        <check_value value="event.param2 == 'invulnerability_on' or event.param2 == 'invulnerability_off'"/>
+      </conditions>
+      <actions>
+        <set_value name="$ship" exact="event.param3"/>
+        <do_if value="$ship.exists and $ship.isclass.ship and $ship.owner == faction.player">
+          <set_value name="$enabled" exact="event.param2 == 'invulnerability_on'"/>
+          <do_if value="not player.entity.$MTrCheatsInvincibleShips?">
+            <set_value name="player.entity.$MTrCheatsInvincibleShips" exact="[]"/>
+          </do_if>
+          <set_value name="$minimum" exact="if $enabled then 100 else 0"/>
+          <set_object_min_hull object="$ship" exact="$minimum"/>
+          <set_object_min_shield object="$ship" exact="$minimum"/>
+          <find_object_component name="$components" object="$ship" multiple="true"/>
+          <do_all exact="$components.count" counter="$i">
+            <set_object_min_hull object="$components.{$i}" exact="$minimum"/>
+            <set_object_min_shield object="$components.{$i}" exact="$minimum"/>
+          </do_all>
+          <do_if value="$enabled">
+            <do_if value="not player.entity.$MTrCheatsInvincibleShips.indexof.{$ship}">
+              <append_to_list name="player.entity.$MTrCheatsInvincibleShips" exact="$ship"/>
+            </do_if>
+          </do_if>
+          <do_else>
+            <remove_from_list name="player.entity.$MTrCheatsInvincibleShips" exact="$ship"/>
+          </do_else>
+          <debug_text text="'MTrCheats: invulnerability=' + $enabled + ' ship=' + $ship"/>
+        </do_if>
+        <raise_lua_event name="'MTrCheats.InvulnerabilityUpdated'" param="$ship"/>
+      </actions>
+    </cue>
+    <!-- Reapply protection to selected ships and their current equipment every 10 seconds. -->
+    <cue name="RefreshInvulnerability" instantiate="true" namespace="this" checkinterval="10s">
+      <conditions>
+        <check_value value="player.entity.$MTrCheatsInvincibleShips?"/>
+      </conditions>
+      <actions>
+        <do_for_each in="player.entity.$MTrCheatsInvincibleShips" name="$ship">
+          <do_if value="$ship.exists and $ship.isclass.ship and $ship.owner == faction.player">
+            <set_object_min_hull object="$ship" exact="100"/>
+            <set_object_min_shield object="$ship" exact="100"/>
+            <find_object_component name="$components" object="$ship" multiple="true"/>
+            <do_all exact="$components.count" counter="$i">
+              <set_object_min_hull object="$components.{$i}" exact="100"/>
+              <set_object_min_shield object="$components.{$i}" exact="100"/>
+            </do_all>
+          </do_if>
+        </do_for_each>
+      </actions>
+    </cue>
+    <cue name="ConsumableCheats" version="2">
+      <actions>
+        <create_group groupname="$AmmoShips"/>
+        <create_group groupname="$DeployableShips"/>
+        <create_group groupname="$MilitaryShips"/>
+        <do_if value="not player.entity.$MTrCheatsAmmoShips?">
+          <set_value name="player.entity.$MTrCheatsAmmoShips" exact="[]"/>
+        </do_if>
+        <do_if value="not player.entity.$MTrCheatsDeployableShips?">
+          <set_value name="player.entity.$MTrCheatsDeployableShips" exact="[]"/>
+        </do_if>
+        <do_if value="not player.entity.$MTrCheatsMilitaryShips?">
+          <set_value name="player.entity.$MTrCheatsMilitaryShips" exact="[]"/>
+        </do_if>
+        <add_to_group groupname="$AmmoShips" list="player.entity.$MTrCheatsAmmoShips"/>
+        <add_to_group groupname="$DeployableShips" list="player.entity.$MTrCheatsDeployableShips"/>
+        <add_to_group groupname="$MilitaryShips" list="player.entity.$MTrCheatsMilitaryShips"/>
+      </actions>
+      <cues>
+        <!-- Event groups must exist before their listeners are enabled. -->
+        <cue name="ConsumableListenersReady" checkinterval="1s">
+          <conditions>
+            <check_value value="parent.state == cuestate.complete"/>
+          </conditions>
+          <cues>
+            <cue name="SetConsumableCheat" instantiate="true" namespace="this">
+              <conditions>
+                <event_ui_triggered screen="'MTrCheats'"/>
+                <check_value value="event.param2 == 'ammo_on' or event.param2 == 'ammo_off' or event.param2 == 'civilian_on' or event.param2 == 'civilian_off' or event.param2 == 'military_on' or event.param2 == 'military_off'"/>
+              </conditions>
+              <actions>
+                <set_value name="$ship" exact="event.param3"/>
+                <do_if value="$ship.exists and $ship.isclass.ship and $ship.owner == faction.player">
+                  <set_value name="$ammo" exact="event.param2 == 'ammo_on' or event.param2 == 'ammo_off'"/>
+                  <set_value name="$civilian" exact="event.param2 == 'civilian_on' or event.param2 == 'civilian_off'"/>
+                  <set_value name="$enabled" exact="event.param2 == 'ammo_on' or event.param2 == 'civilian_on' or event.param2 == 'military_on'"/>
+                  <set_value name="$ships" exact="if $ammo then player.entity.$MTrCheatsAmmoShips else (if $civilian then player.entity.$MTrCheatsDeployableShips else player.entity.$MTrCheatsMilitaryShips)"/>
+                  <do_if value="$enabled">
+                    <do_if value="not $ships.indexof.{$ship}">
+                      <append_to_list name="$ships" exact="$ship"/>
+                    </do_if>
+                    <do_if value="$ammo">
+                      <add_to_group groupname="ConsumableCheats.$AmmoShips" object="$ship"/>
+                    </do_if>
+                    <do_elseif value="$civilian">
+                      <add_to_group groupname="ConsumableCheats.$DeployableShips" object="$ship"/>
+                    </do_elseif>
+                    <do_else>
+                      <add_to_group groupname="ConsumableCheats.$MilitaryShips" object="$ship"/>
+                    </do_else>
+                  </do_if>
+                  <do_else>
+                    <remove_from_list name="$ships" exact="$ship"/>
+                    <do_if value="$ammo">
+                      <remove_from_group group="ConsumableCheats.$AmmoShips" object="$ship"/>
+                    </do_if>
+                    <do_elseif value="$civilian">
+                      <remove_from_group group="ConsumableCheats.$DeployableShips" object="$ship"/>
+                    </do_elseif>
+                    <do_else>
+                      <remove_from_group group="ConsumableCheats.$MilitaryShips" object="$ship"/>
+                    </do_else>
+                  </do_else>
+                </do_if>
+                <raise_lua_event name="'MTrCheats.ConsumablesUpdated'" param="$ship"/>
+              </actions>
+            </cue>
+
+            <!-- These events report use, never a sale or an inventory transfer. -->
+            <cue name="RefundMissile" instantiate="true" namespace="this">
+              <conditions>
+                <event_object_launched_missile group="ConsumableCheats.$AmmoShips"/>
+                <check_value value="event.object.exists and event.object.owner == faction.player"/>
+                <check_value value="event.param2.exists"/>
+              </conditions>
+              <actions>
+                <add_ammo object="event.object" macro="event.param2.macro" amount="1"/>
+              </actions>
+            </cue>
+            <cue name="RefundCountermeasure" instantiate="true" namespace="this">
+              <conditions>
+                <event_object_launched_countermeasure group="ConsumableCheats.$AmmoShips"/>
+                <check_value value="event.object.exists and event.object.owner == faction.player"/>
+                <check_value value="event.param.exists"/>
+              </conditions>
+              <actions>
+                <add_ammo object="event.object" macro="event.param.macro" amount="1"/>
+              </actions>
+            </cue>
+            <cue name="RefundDeployable" instantiate="true" namespace="this">
+              <conditions>
+                <check_any>
+                  <event_object_launched_satellite group="ConsumableCheats.$DeployableShips"/>
+                  <event_object_launched_resourceprobe group="ConsumableCheats.$DeployableShips"/>
+                  <event_object_launched_navbeacon group="ConsumableCheats.$DeployableShips"/>
+                </check_any>
+                <check_value value="event.object.exists and event.object.owner == faction.player"/>
+                <check_value value="event.param.exists"/>
+              </conditions>
+              <actions>
+                <add_ammo object="event.object" macro="event.param.macro" amount="1"/>
+              </actions>
+            </cue>
+            <cue name="RefundMilitaryDeployable" instantiate="true" namespace="this">
+              <conditions>
+                <check_any>
+                  <event_object_launched_lasertower group="ConsumableCheats.$MilitaryShips"/>
+                  <event_object_launched_mine group="ConsumableCheats.$MilitaryShips"/>
+                </check_any>
+                <check_value value="event.object.exists and event.object.owner == faction.player"/>
+                <check_value value="event.param.exists"/>
+              </conditions>
+              <actions>
+                <add_ammo object="event.object" macro="event.param.macro" amount="1"/>
+              </actions>
+            </cue>
+          </cues>
+        </cue>
+      </cues>
+    </cue>
+  </cues>
+</mdscript>
